@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Your Dream Cake | Bakeryance</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">Bakeryance</div>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="menu.html">Menu</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <a href="order.html" class="order-btn">Order Now</a>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <h1>Order Your Dream Cake</h1>
+      <p>Made with love, baked fresh daily</p>
+    </div>
+  </section>
+
+  <!-- Order Form Section -->
+  <section class="order-section">
+    <div class="order-container">
+      <form class="order-form">
+        <h2>Customize Your Order</h2>
+
+        <label for="product">Product Type</label>
+        <select id="product" name="product">
+          <option>Cake</option>
+          <option>Cupcake</option>
+          <option>Cookie</option>
+        </select>
+
+        <label for="flavor">Flavor</label>
+        <select id="flavor" name="flavor">
+          <option>Chocolate</option>
+          <option>Vanilla</option>
+          <option>Strawberry</option>
+          <option>Red Velvet</option>
+          <option>Custom</option>
+        </select>
+
+        <label for="size">Size</label>
+        <select id="size" name="size">
+          <option>Small</option>
+          <option>Medium</option>
+          <option>Large</option>
+          <option>Custom Weight</option>
+        </select>
+
+        <label for="quantity">Quantity</label>
+        <input type="number" id="quantity" min="1" max="20" value="1">
+
+        <label for="date">Delivery Date</label>
+        <input type="date" id="date" name="date">
+
+        <label for="message">Special Message</label>
+        <textarea id="message" rows="4" placeholder="Write your note here..."></textarea>
+
+        <label for="image">Upload Image (optional)</label>
+        <input type="file" id="image" accept="image/*">
+
+        <button type="submit" class="place-order">Place Order</button>
+      </form>
+
+      <!-- Summary Box -->
+      <div class="summary-box">
+        <h3>Order Summary</h3>
+        <p><strong>Product:</strong> Cake</p>
+        <p><strong>Flavor:</strong> Chocolate</p>
+        <p><strong>Size:</strong> Medium</p>
+        <p><strong>Quantity:</strong> 1</p>
+        <hr>
+        <p class="price"><strong>Estimated Price:</strong> ৳ 1,200</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Confirmation Message -->
+  <div class="confirmation-message" id="confirmation" style="display:none;">
+    🎉 Thank you! Your custom order has been received. We’ll contact you soon.
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>© 2025 Bakeryance | Made with Love in Dhaka</p>
+    <div class="social">
+      <a href="#">Facebook</a>
+      <a href="#">Instagram</a>
+      <a href="#">WhatsApp</a>
+    </div>
+  </footer>
+
+  <script>
+    const form = document.querySelector('.order-form');
+    const confirmation = document.getElementById('confirmation');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      confirmation.style.display = 'block';
+      form.reset();
+      window.scrollTo({ top: confirmation.offsetTop, behavior: 'smooth' });
+    });
+  </script>
+
+</body>
+</html>
