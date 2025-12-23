@@ -1,17 +1,230 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <title>My Orders | Bakeryance</title>
     <link rel="stylesheet" href="../style.css">
-    <script type="module" src="../js/protect.js"></script>
-    <script type="module" src="../js/orders.js"></script>
+
+    <style>
+        .orders-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .orders-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .orders-list {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #e74c3c;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+        }
+
+        .order-id {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .order-status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-paid {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .order-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .order-summary {
+            margin-top: 15px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+        }
+
+        .summary-total {
+            font-weight: bold;
+            border-top: 2px solid #ddd;
+            padding-top: 10px;
+        }
+
+        .empty-orders {
+            text-align: center;
+            padding: 60px;
+            background: white;
+            border-radius: 15px;
+        }
+    </style>
 </head>
 
-<body class="summary-box">
+<body>
 
-    <h2>Order History</h2>
-    <ul id="ordersList"></ul>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="logo">🍰 Bakeryance</div>
+        <nav>
+            <ul class="nav-links">
+                <li><a href="homepage.html">Home</a></li>
+                <li><a href="menu.html">Menu</a></li>
+                <li><a href="cart.html">Cart</a></li>
+                <li><a href="orders.html" class="active">Orders</a></li>
+            </ul>
+        </nav>
+        <a href="cart.html" class="cart-btn">🛒</a>
+    </header>
 
+    <div class="orders-container">
+        <div class="orders-header">
+            <h1>📦 My Orders</h1>
+            <p>View and track your orders</p>
+        </div>
+
+        <div id="ordersList" class="orders-list">
+            <div class="empty-orders">Loading orders...</div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <p class="copyright">© 2025 Bakeryance. All rights reserved.</p>
+    </footer>
+
+    <!-- 🔥 FIXED FIREBASE LOGIC -->
+    <script type="module">
+        import { auth, db } from "../js/firebase.js";
+        import {
+            collection,
+            query,
+            where,
+            getDocs
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                location.href = "login.html";
+                return;
+            }
+            loadOrders(user.uid);
+        });
+
+        async function loadOrders(userId) {
+            const ordersList = document.getElementById("ordersList");
+
+            try {
+                const q = query(
+                    collection(db, "orders"),
+                    where("userId", "==", userId)
+                );
+
+                const snap = await getDocs(q);
+
+                if (snap.empty) {
+                    ordersList.innerHTML = `
+                        <div class="empty-orders">
+                            <h3>No orders yet</h3>
+                            <a href="menu.html" class="btn-order">Shop Now</a>
+                        </div>
+                    `;
+                    return;
+                }
+
+                ordersList.innerHTML = "";
+
+                snap.forEach(docSnap => {
+                    const order = docSnap.data();
+
+                    let itemsHTML = "";
+                    let subtotal = 0;
+
+                    order.items.forEach(item => {
+                        const itemTotal = item.price * item.qty;
+                        subtotal += itemTotal;
+                        itemsHTML += `
+                            <div class="order-item">
+                                <span>${item.name} × ${item.qty}</span>
+                                <span>৳${itemTotal}</span>
+                            </div>
+                        `;
+                    });
+
+                    const delivery = order.deliveryFee || 0;
+                    const total = order.total || subtotal + delivery;
+
+                    const card = document.createElement("div");
+                    card.className = "order-card";
+                    card.innerHTML = `
+                        <div class="order-header">
+                            <div class="order-id">${order.orderId}</div>
+                            <div class="order-status status-${order.status?.toLowerCase() || 'pending'}">
+                                ${order.status || 'Pending'}
+                            </div>
+                        </div>
+
+                        ${itemsHTML}
+
+                        <div class="order-summary">
+                            <div class="summary-row"><span>Subtotal</span><span>৳${subtotal}</span></div>
+                            <div class="summary-row"><span>Delivery</span><span>৳${delivery}</span></div>
+                            <div class="summary-row summary-total"><span>Total</span><span>৳${total}</span></div>
+                        </div>
+                    `;
+                    ordersList.appendChild(card);
+                });
+
+            } catch (err) {
+                console.error(err);
+                ordersList.innerHTML = `
+                    <div class="empty-orders">
+                        <h3>Error loading orders</h3>
+                        <button onclick="location.reload()" class="btn-order">Retry</button>
+                    </div>
+                `;
+            }
+        }
+    </script>
 
 </body>
 

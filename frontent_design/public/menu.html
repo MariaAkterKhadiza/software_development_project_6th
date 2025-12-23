@@ -265,20 +265,29 @@
   <script type="module" src="../js/firebase.js"></script>
   <!-- LOAD CART -->
   <script type="module" src="../js/cart.js"></script>
+  <link rel="stylesheet" href="../style.css">
 </head>
 
 <body>
   <!-- Header -->
-  <div class="header">
+  <header class="header">
     <div class="logo">🍰 Bakeryance</div>
-    <div class="nav">
-      <a href="homepage.html">Home</a>
-      <a href="menu.html">Menu</a>
-      <a href="about.html">About</a>
-      <a href="contact.html">Contact</a>
-    </div>
-    <a href="cart.html" class="cart-btn">🛒Cart</a>
-  </div>
+  
+    <nav>
+      <ul class="nav-links">
+        <li><a href="homepage.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="menu.html" class="active">Menu</a></li>
+        <li><a href="gallary.html">Gallery</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  
+    <a href="dashboard.html" class="btn-order">My Account</a>
+    <a href="cart.html" class="cart-btn" title="View Cart">
+      🛒
+    </a>
+  </header>
 
   <!-- Products -->
   <div class="products">

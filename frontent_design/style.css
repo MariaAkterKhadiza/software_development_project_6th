@@ -1370,3 +1370,48 @@ input, select, textarea {
     margin-bottom: 15px;
   }
 }
+
+
+
+/* ================= HEADER FIX ================= */
+.header {
+  display: flex;
+  align-items: center; /* 🔥 THIS CENTERS EVERYTHING VERTICALLY */
+  justify-content: space-between;
+}
+
+/* Ensure nav stays centered */
+.header nav {
+  display: flex;
+  align-items: center;
+}
+
+/* Fix My Account button alignment */
+.header .btn-order {
+  display: flex;
+  align-items: center;
+  height: 44px;
+}
+
+/* Fix Cart icon alignment */
+.cart-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50px;
+  width: 50px;
+  margin-left: 12px;
+
+  background: #ff4f7a;
+  color: white;
+  border-radius: 50%;
+  font-size: 20px;
+  text-decoration: none;
+
+  position: relative; /* IMPORTANT: removes floating effect */
+  top: 0;             /* IMPORTANT: removes vertical offset */
+}
+
+.cart-btn:hover {
+  background: #e63b63;
+}
