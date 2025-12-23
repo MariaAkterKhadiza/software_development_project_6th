@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menu | Bakeryance</title>
+
+  <style>
+    /* RESET AND BASE STYLES */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: #f8f9fa;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    .header {
+      background: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      color: #e74c3c;
+      font-size: 28px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav {
+      display: flex;
+      gap: 25px;
+    }
+
+    .nav a {
+      text-decoration: none;
+      color: #333;
+      font-weight: 500;
+      padding: 8px 12px;
+      border-radius: 5px;
+      transition: all 0.3s;
+    }
+
+    .nav a:hover {
+      color: #e74c3c;
+      background: #f5f5f5;
+    }
+
+    .cart-btn {
+      font-size: 24px;
+      color: #333;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .cart-btn:hover {
+      color: #e74c3c;
+    }
+
+    /* MAIN CONTENT */
+    .products {
+      padding: 40px 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      flex: 1;
+      width: 100%;
+    }
+
+    .products h1 {
+      text-align: center;
+      margin-bottom: 40px;
+      color: #333;
+      font-size: 36px;
+    }
+
+    /* PRODUCT GRID - FIXED TO DISPLAY HORIZONTALLY */
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 30px;
+      justify-items: center;
+    }
+
+    .product-card {
+      background: white;
+      width: 100%;
+      max-width: 280px;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .product-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .product-card h3 {
+      color: #333;
+      margin: 10px 0;
+      font-size: 20px;
+      line-height: 1.4;
+      flex-grow: 1;
+    }
+
+    .price {
+      color: #e74c3c;
+      font-size: 24px;
+      font-weight: bold;
+      margin: 15px 0;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .price::before {
+      content: '৳';
+      margin-right: 5px;
+    }
+
+    .add-to-cart {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 14px;
+      width: 100%;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: background 0.3s;
+      margin-top: auto;
+    }
+
+    .add-to-cart:hover {
+      background: #c0392b;
+    }
+
+    /* FOOTER */
+    .footer {
+      background: #2c3e50;
+      color: white;
+      padding: 50px 20px 30px;
+      margin-top: 60px;
+    }
+
+    .footer-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 40px;
+    }
+
+    .footer h4 {
+      color: #e74c3c;
+      margin-bottom: 20px;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .footer p {
+      margin: 8px 0;
+      color: #ecf0f1;
+      line-height: 1.6;
+    }
+
+    .social-icons {
+      display: flex;
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .social-icons a {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: #34495e;
+      border-radius: 50%;
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      transition: all 0.3s;
+    }
+
+    .social-icons a:hover {
+      background: #e74c3c;
+      transform: translateY(-3px);
+    }
+
+    .copyright {
+      text-align: center;
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 1px solid #34495e;
+      color: #bdc3c7;
+      font-size: 14px;
+    }
+
+    /* RESPONSIVE DESIGN */
+    @media (max-width: 768px) {
+      .header {
+        padding: 15px;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .nav {
+        gap: 15px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .product-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+      }
+
+      .products h1 {
+        font-size: 28px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .product-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .product-card {
+        max-width: 100%;
+      }
+    }
+  </style>
+
+  <!-- LOAD FIREBASE -->
+  <script type="module" src="../js/firebase.js"></script>
+  <!-- LOAD CART -->
+  <script type="module" src="../js/cart.js"></script>
+</head>
+
+<body>
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">🍰 Bakeryance</div>
+    <div class="nav">
+      <a href="homepage.html">Home</a>
+      <a href="menu.html">Menu</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </div>
+    <a href="cart.html" class="cart-btn">🛒Cart</a>
+  </div>
+
+  <!-- Products -->
+  <div class="products">
+    <h1>Our Delicious Menu</h1>
+
+    <div class="product-grid">
+
+      <!-- PRODUCT 1 -->
+      <div class="product-card">
+        <img src="../images/birthday cake category 2.png" alt="Chocolate Cake">
+        <h3>Chocolate Cake</h3>
+        <div class="price">750</div>
+        <button class="add-to-cart"
+          onclick="addToCart('Chocolate Cake', 750, '../images/birthday cake category 2.png')">
+          Add to Cart
+        </button>
+      </div>
+
+      <!-- PRODUCT 2 -->
+      <div class="product-card">
+        <img src="../images/birthday cake category 1.png" alt="Strawberry Chocolate Cake">
+        <h3>Strawberry Chocolate Cake</h3>
+        <div class="price">1200</div>
+        <button class="add-to-cart"
+          onclick="addToCart('Strawberry Chocolate Cake', 1200, '../images/birthday cake category 1.png')">
+          Add to Cart
+        </button>
+      </div>
+
+      <!-- PRODUCT 3 -->
+      <div class="product-card">
+        <img src="../images/birthday cake category 3.png" alt="Red Velvet Cake">
+        <h3>Red Velvet Cake</h3>
+        <div class="price">190</div>
+        <button class="add-to-cart"
+          onclick="addToCart('Red Velvet Cake', 190, '../images/birthday cake category 3.png')">
+          Add to Cart
+        </button>
+      </div>
+
+      <!-- PRODUCT 4 -->
+      <div class="product-card">
+        <img src="../images/donut category 1.png" alt="Donut">
+        <h3>Donut</h3>
+        <div class="price">700</div>
+        <button class="add-to-cart" onclick="addToCart('Donut', 700, '../images/donut category 1.png')">
+          Add to Cart
+        </button>
+      </div>
+      
+      <div class="product-card">
+        <img src="../images/donut category 3.png" alt="Chocolate Chip Donut">
+        <h3>Chocolate Chip Donut</h3>
+        <div class="price">280</div>
+        <button class="add-to-cart" onclick="addToCart('Chocolate Chip Donut', 280, '../images/donut category 3.png')">
+          Add to Cart
+        </button>
+      </div>
+
+      <!-- PRODUCT 6 -->
+      <div class="product-card">
+        <img src="../images/cupcake category 1.png" alt="Vanilla Cupcake">
+        <h3>Vanilla Cupcake</h3>
+        <div class="price">900</div>
+        <button class="add-to-cart" onclick="addToCart('Vanilla Cupcake', 900, '../images/cupcake category 1.png')">
+          Add to Cart
+        </button>
+      </div>
+
+      <!-- PRODUCT 7 -->
+      <div class="product-card">
+        <img src="../images/cupcake category 3.png" alt="Coffee Cupcake">
+        <h3>Coffee Cupcake</h3>
+        <div class="price">260</div>
+        <button class="add-to-cart" onclick="addToCart('Coffee Cupcake', 260, '../images/cupcake category 3.png')">
+          Add to Cart
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <h4>Contact Us</h4>
+        <p>📍 Dhanmondi, Dhaka</p>
+        <p>📞 +880 1234-567890</p>
+        <p>📧 hello@bakeryance.com</p>
+      </div>
+
+      <div>
+        <h4>Opening Hours</h4>
+        <p>Mon–Fri: 9am–8pm</p>
+        <p>Sat–Sun: 10am–9pm</p>
+      </div>
+
+      <div>
+        <h4>Follow Us</h4>
+        <div class="social-icons">
+          <a href="#" title="Facebook">FB</a>
+          <a href="#" title="Instagram">IG</a>
+          <a href="#" title="Twitter">TW</a>
+        </div>
+      </div>
+    </div>
+
+    <p class="copyright">© 2025 Bakeryance. All rights reserved.</p>
+  </footer>
+
+  <!-- SIMPLE CHECK SCRIPT -->
+  <script>
+    // Check if addToCart is loaded
+    setTimeout(function () {
+      if (typeof window.addToCart === 'function') {
+        console.log("✅ Cart system is READY!");
+        document.body.style.border = "3px solid green";
+      } else {
+        console.error("❌ Cart system NOT loaded!");
+        document.body.style.border = "3px solid red";
+        alert("ERROR: Cart system not loaded!\nCheck: 1. File paths 2. Browser console (F12)");
+      }
+    }, 1000);
+  </script>
+</body>
+
+</html>

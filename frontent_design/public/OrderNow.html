@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Order Now</title>
+  <link rel="stylesheet" href="../style.css">
+  <script type="module" src="../js/protect.js"></script>
+  <script type="module" src="../js/placeOrder.js"></script>
+</head>
+
+<body>
+
+  <section class="order-section">
+    <form class="order-form">
+
+      <select id="product">
+        <option value="Cake">Cake</option>
+        <option value="Cupcake">Cupcake</option>
+      </select>
+
+      <select id="flavor">
+        <option>Chocolate</option>
+        <option>Vanilla</option>
+      </select>
+
+      <select id="size">
+        <option>Small</option>
+        <option>Medium</option>
+      </select>
+
+      <input id="quantity" type="number" value="1">
+      <input id="date" type="date">
+      <textarea id="message" placeholder="Message"></textarea>
+
+      <button class="btn-order">Place Order</button>
+    </form>
+
+    <div id="confirmation" style="display:none;">
+      Order placed successfully!
+    </div>
+  </section>
+
+</body>
+
+</html>
