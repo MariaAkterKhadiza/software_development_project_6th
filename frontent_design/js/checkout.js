@@ -1,9 +1,8 @@
-// checkout.js - FIXED VERSION
+// checkout.js (FINAL WORKING VERSION)
 import { auth, db } from "./firebase.js";
 import {
     collection,
     query,
-    where,
     getDocs,
     addDoc,
     deleteDoc,
@@ -11,146 +10,122 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-// Global variables
+// GLOBAL VARIABLES
 let cartItems = [];
-let selectedPayment = 'cash';
-let orderTotal = 0;
+let selectedPayment = "cash";
+let totalAmount = 0;
 
-// Load cart items on page load
-document.addEventListener('DOMContentLoaded', function () {
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            alert("Please login first");
-            window.location.href = "login.html";
-            return;
-        }
-        await loadCartItems(user.uid);
+// Load when page opens
+document.addEventListener("DOMContentLoaded", () => {
+    onAuthStateChanged(auth, (user) => {
+        if (!user) return window.location.href = "login.html";
+        loadCart(user.uid);
     });
 });
 
-// Load cart items
-async function loadCartItems(userId) {
-    try {
-        const q = query(
-            collection(db, "carts"),
-            where("userId", "==", userId)
-        );
+// ================= Load Cart =================
+async function loadCart(userId) {
+    const cartRef = collection(db, "users", userId, "carts");
+    const snap = await getDocs(cartRef);
 
-        const snap = await getDocs(q);
-        cartItems = [];
-        let subtotal = 0;
+    const container = document.getElementById("orderItems");
+    container.innerHTML = "";
 
-        const orderItemsDiv = document.getElementById('orderItems');
-        orderItemsDiv.innerHTML = '';
-
-        if (snap.empty) {
-            orderItemsDiv.innerHTML = '<p>Your cart is empty. <a href="menu.html">Browse menu</a></p>';
-            return;
-        }
-
-        snap.forEach((docItem) => {
-            const item = docItem.data();
-            item.id = docItem.id;
-            cartItems.push(item);
-
-            const itemTotal = item.price * item.qty;
-            subtotal += itemTotal;
-
-            orderItemsDiv.innerHTML += `
-                <div class="order-item">
-                    <span>${item.name} × ${item.qty}</span>
-                    <span>৳${itemTotal}</span>
-                </div>
-            `;
-        });
-
-        const deliveryFee = subtotal >= 1000 ? 0 : 50;
-        orderTotal = subtotal + deliveryFee;
-
-        document.getElementById('subtotal').textContent = `৳${subtotal}`;
-        document.getElementById('deliveryFee').textContent = deliveryFee === 0 ? 'FREE' : `৳${deliveryFee}`;
-        document.getElementById('totalAmount').textContent = `৳${orderTotal}`;
-
-    } catch (error) {
-        console.error("Error loading cart:", error);
-        document.getElementById('orderItems').innerHTML = '<p>Error loading cart items</p>';
+    if (snap.empty) {
+        container.innerHTML = `<p>Your cart is empty <a href="menu.html">Shop now</a></p>`;
+        return;
     }
-}
 
-// ✅ FIXED: pass event explicitly
-window.selectPayment = function (method, ev) {
-    selectedPayment = method;
+    let subtotal = 0;
+    cartItems = [];
 
-    document.querySelectorAll('.payment-option').forEach(option => {
-        option.classList.remove('selected');
+    snap.forEach(d => {
+        const item = d.data();
+        item.id = d.id;
+        cartItems.push(item);
+
+        const sum = item.price * item.qty;
+        subtotal += sum;
+
+        container.innerHTML += `
+        <div class="order-item">
+            <span>${item.name} × ${item.qty}</span>
+            <span>৳${sum}</span>
+        </div>`;
     });
 
-    ev.currentTarget.classList.add('selected');
-};
+    const delivery = subtotal >= 1000 ? 0 : 50;
+    totalAmount = subtotal + delivery;
 
-// Validate form
-function validateForm() {
-    const address = document.getElementById("address").value.trim();
-
-    if (!address || address.length < 10) {
-        document.getElementById('addressError').textContent =
-            'Please enter a complete delivery address';
-        document.getElementById('addressError').style.display = 'block';
-        return false;
-    }
-
-    document.getElementById('addressError').style.display = 'none';
-    return cartItems.length > 0;
+    document.getElementById("subtotal").innerText = "৳" + subtotal;
+    document.getElementById("deliveryFee").innerText = delivery === 0 ? "FREE" : "৳" + delivery;
+    document.getElementById("totalAmount").innerText = "৳" + totalAmount;
 }
 
-// Place order
+// ================= PAYMENT SELECT =================
+window.selectPayment = function (method, event) {
+    selectedPayment = method;
+
+    document.querySelectorAll(".payment-option")
+        .forEach(el => el.classList.remove("selected"));
+
+    event.target.closest(".payment-option").classList.add("selected");
+};
+
+// ================= CHECK VALIDATION =================
+function validateForm() {
+    const address = document.getElementById("address").value.trim();
+    const error = document.getElementById("addressError");
+
+    if (address.length < 10) {
+        error.innerText = "Enter full delivery address";
+        error.style.display = "block";
+        return false;
+    }
+    error.style.display = "none";
+    return true;
+}
+
+// ================= PLACE ORDER =================
 window.placeOrder = async function () {
     if (!validateForm()) return;
 
     const user = auth.currentUser;
-    if (!user) {
-        window.location.href = "login.html";
-        return;
+    if (!user) return location.href = "login.html";
+
+    const btn = document.getElementById("placeOrderBtn");
+    btn.disabled = true;
+    btn.innerHTML = `<span class="loading"></span> Processing...`;
+
+    const address = document.getElementById("address").value.trim();
+    const id = "ORD-" + Date.now();
+
+    const orderData = {
+        orderId: id,
+        items: cartItems,
+        total: totalAmount,
+        paymentMethod: selectedPayment,
+        status: selectedPayment === "cash" ? "Pending" : "Paid",
+        address,
+        createdAt: new Date()
+    };
+
+    // Save order
+    await addDoc(collection(db, "users", user.uid, "orders"), orderData);
+
+    // Clear the cart
+    for (let i of cartItems) {
+        await deleteDoc(doc(db, "users", user.uid, "carts", i.id));
     }
 
-    const btn = document.getElementById('placeOrderBtn');
+    // Success display
+    document.getElementById("successMessage").style.display = "block";
+    document.getElementById("orderId").innerText = id;
+    document.getElementById("orderTotal").innerText = "৳" + totalAmount;
 
-    try {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="loading"></span> Processing...';
+    btn.style.display = "none";
 
-        const orderId = 'ORD-' + Date.now();
-
-        const orderData = {
-            orderId,
-            userId: user.uid,
-            email: user.email,
-            items: cartItems,
-            address: document.getElementById("address").value.trim(),
-            paymentMethod: selectedPayment,
-            status: selectedPayment === 'cash' ? 'Pending' : 'Paid',
-            total: orderTotal,
-            createdAt: new Date()
-        };
-
-        await addDoc(collection(db, "orders"), orderData);
-
-        for (const item of cartItems) {
-            await deleteDoc(doc(db, "carts", item.id));
-        }
-
-        document.getElementById('successMessage').style.display = 'block';
-        document.getElementById('orderId').textContent = orderId;
-        document.getElementById('orderTotal').textContent = '৳' + orderTotal;
-
-        setTimeout(() => {
-            window.location.href = "orders.html"; // ✅ FIXED
-        }, 3000);
-
-    } catch (err) {
-        console.error(err);
-        btn.disabled = false;
-        btn.innerHTML = 'Place Order';
-        alert("Order failed. Try again.");
-    }
+    setTimeout(() => (window.location.href = "orders.html"), 2000);
 };
+
+console.log("✅ Checkout system ready");

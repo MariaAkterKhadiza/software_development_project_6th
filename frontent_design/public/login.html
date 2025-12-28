@@ -6,8 +6,7 @@
     <title>Login | Bakeryance</title>
     <style>
         body {
-            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
-                url('../images/Special%20offer%204.png');
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('../images/Special%20offer%204.png');
             background-size: cover;
             font-family: Arial;
             display: flex;
@@ -22,7 +21,7 @@
             padding: 40px;
             border-radius: 10px;
             width: 350px;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, .3);
         }
 
         h2 {
@@ -37,7 +36,6 @@
             margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 5px;
-            box-sizing: border-box;
             font-size: 16px;
         }
 
@@ -49,8 +47,8 @@
             border: none;
             border-radius: 5px;
             font-size: 16px;
-            cursor: pointer;
             margin-top: 10px;
+            cursor: pointer;
         }
 
         button:hover {
@@ -65,13 +63,9 @@
 
         .switch a {
             color: #d2691e;
-            cursor: pointer;
             font-weight: bold;
+            cursor: pointer;
             text-decoration: none;
-        }
-
-        .form {
-            display: block;
         }
 
         .form.hidden {
@@ -88,122 +82,151 @@
 </head>
 
 <body>
+
     <div class="box">
-        <!-- LOGIN FORM -->
+
+        <!-- LOGIN -->
         <div id="loginForm" class="form">
             <h2>Login</h2>
             <input type="email" id="lemail" placeholder="Email Address" required>
             <input type="password" id="lpass" placeholder="Password" required>
             <button onclick="login()">Login</button>
             <div id="loginMessage" class="message"></div>
-            <div class="switch">
-                Don't have an account? <a onclick="showRegister()">Register</a>
-            </div>
+            <div class="switch">Don't have an account? <a onclick="showRegister()">Register</a></div>
         </div>
 
-        <!-- REGISTER FORM -->
+        <!-- REGISTER -->
         <div id="registerForm" class="form hidden">
             <h2>Register</h2>
             <input type="text" id="rname" placeholder="Full Name" required>
             <input type="email" id="remail" placeholder="Email Address" required>
-            <input type="tel" id="rphone" placeholder="Phone Number (optional)">
+            <input type="tel" id="rphone" placeholder="Phone Number" required>
             <input type="password" id="rpass" placeholder="Password" required>
             <button onclick="register()">Create Account</button>
             <div id="registerMessage" class="message"></div>
-            <div class="switch">
-                Already have an account? <a onclick="showLogin()">Login</a>
-            </div>
+            <div class="switch">Already have an account? <a onclick="showLogin()">Login</a></div>
         </div>
+
     </div>
 
     <script type="module">
-        // Import Firebase
-        import { auth } from "../js/firebase.js";
-        import {
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            updateProfile
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { auth, db } from "../js/firebase.js";
+        import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile }
+            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { setDoc, doc, serverTimestamp }
+            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        // Toggle functions
-        window.showRegister = function () {
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('registerForm').classList.remove('hidden');
-            document.getElementById('registerMessage').textContent = '';
+        window.showRegister = () => {
+            loginForm.classList.add("hidden");
+            registerForm.classList.remove("hidden");
+            loginMessage.textContent = '';
         }
 
-        window.showLogin = function () {
-            document.getElementById('registerForm').classList.add('hidden');
-            document.getElementById('loginForm').classList.remove('hidden');
-            document.getElementById('loginMessage').textContent = '';
+        window.showLogin = () => {
+            registerForm.classList.add("hidden");
+            loginForm.classList.remove("hidden");
+            registerMessage.textContent = '';
         }
 
-        // Login function
-        window.login = async function () {
-            const email = document.getElementById('lemail').value;
-            const password = document.getElementById('lpass').value;
-
-            if (!email || !password) {
-                document.getElementById('loginMessage').textContent = 'Please fill in all fields';
+        // LOGIN
+        window.login = async () => {
+            if (!lemail.value || !lpass.value) {
+                loginMessage.textContent = "Please enter email & password";
                 return;
             }
 
             try {
-                await signInWithEmailAndPassword(auth, email, password);
-                window.location.href = 'homepage.html';
-            } catch (error) {
-                document.getElementById('loginMessage').textContent = 'Login failed. Check email/password';
+                await signInWithEmailAndPassword(auth, lemail.value, lpass.value);
+                window.location.href = "homepage.html";
+            } catch (err) {
+                console.error("Login error:", err);
+                loginMessage.textContent = "Invalid Login Info";
             }
         }
 
-        // Register function
-        window.register = async function () {
-            const name = document.getElementById('rname').value;
-            const email = document.getElementById('remail').value;
-            const password = document.getElementById('rpass').value;
+        // REGISTER - FIXED TO MATCH PROFILE.JS STRUCTURE
+        window.register = async () => {
+            const name = rname.value.trim();
+            const email = remail.value.trim();
+            const phone = rphone.value.trim();
+            const password = rpass.value.trim();
 
-            if (!name || !email || !password) {
-                document.getElementById('registerMessage').textContent = 'Please fill in all required fields';
+            if (!name || !email || !phone || !password) {
+                registerMessage.textContent = "All fields are required";
                 return;
             }
 
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
+            // Phone validation
+            if (phone.length < 10) {
+                registerMessage.textContent = "Please enter a valid phone number";
+                return;
+            }
 
-                // Update profile with name
-                await updateProfile(user, {
-                    displayName: name
+            // Password validation
+            if (password.length < 6) {
+                registerMessage.textContent = "Password should be at least 6 characters";
+                return;
+            }
+
+            registerMessage.textContent = "Registering...";
+            registerMessage.style.color = "#d2691e";
+
+            try {
+                // 1. Create user in Firebase Authentication
+                const res = await createUserWithEmailAndPassword(auth, email, password);
+
+                // 2. Update user profile with display name
+                await updateProfile(res.user, { displayName: name });
+
+                // 3. Save user data to Firestore - MATCHING PROFILE.JS PATH
+                await setDoc(doc(db, "users", res.user.uid, "profile", "info"), {
+                    name: name,
+                    email: email,
+                    phone: phone,
+                    createdAt: serverTimestamp()
                 });
 
-                document.getElementById('registerMessage').textContent = 'Registration successful! Please login.';
-                document.getElementById('registerMessage').style.color = 'green';
+                // Success message
+                registerMessage.style.color = "green";
+                registerMessage.textContent = "✔ Registration successful! Redirecting...";
 
-                // Clear form and switch to login after 2 seconds
-                setTimeout(() => {
-                    document.getElementById('rname').value = '';
-                    document.getElementById('remail').value = '';
-                    document.getElementById('rphone').value = '';
-                    document.getElementById('rpass').value = '';
-                    showLogin();
-                    document.getElementById('lemail').value = email;
+                // Auto login and redirect
+                setTimeout(async () => {
+                    try {
+                        await signInWithEmailAndPassword(auth, email, password);
+                        window.location.href = "homepage.html";
+                    } catch (err) {
+                        console.error("Auto login failed:", err);
+                        registerMessage.textContent = "Registration successful! Please login manually.";
+                        showLogin();
+                        lemail.value = email;
+                    }
                 }, 2000);
 
-            } catch (error) {
-                let message = 'Registration failed. ';
-                if (error.code === 'auth/email-already-in-use') {
-                    message = 'Email already registered';
-                } else if (error.code === 'auth/weak-password') {
-                    message = 'Password too weak (min 6 characters)';
+            } catch (err) {
+                console.error("Registration error:", err);
+
+                // Clear sensitive data from inputs on error
+                rpass.value = "";
+
+                if (err.code === "auth/email-already-in-use") {
+                    registerMessage.textContent = "Email already exists. Please use a different email or login.";
+                } else if (err.code === "auth/weak-password") {
+                    registerMessage.textContent = "Password is too weak. Use at least 6 characters.";
+                } else if (err.code === "auth/invalid-email") {
+                    registerMessage.textContent = "Invalid email format.";
+                } else if (err.code === "auth/network-request-failed") {
+                    registerMessage.textContent = "Network error. Please check your internet connection.";
+                } else {
+                    registerMessage.textContent = "Registration failed. Please try again.";
                 }
-                document.getElementById('registerMessage').textContent = message;
             }
         }
 
         // Enter key support
-        document.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                if (document.getElementById('loginForm').classList.contains('hidden')) {
+        document.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                if (loginForm.classList.contains("hidden")) {
                     register();
                 } else {
                     login();
@@ -211,6 +234,7 @@
             }
         });
     </script>
+
 </body>
 
 </html>

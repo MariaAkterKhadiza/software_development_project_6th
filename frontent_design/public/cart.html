@@ -43,7 +43,7 @@
         }
 
         .cart-item-details h3 {
-            margin: 0 0 10px 0;
+            margin: 0 0 10px;
             color: #333;
         }
 
@@ -99,19 +99,14 @@
             color: #666;
         }
 
-        .empty-cart h2 {
-            margin-bottom: 20px;
-            color: #333;
-        }
-
         .btn-remove {
             background: #ff4444;
             color: white;
             border: none;
             padding: 8px 15px;
             border-radius: 5px;
-            cursor: pointer;
             margin-top: 10px;
+            cursor: pointer;
         }
 
         .btn-remove:hover {
@@ -119,146 +114,90 @@
         }
     </style>
 
+    <!-- ================== FIREBASE FIXED SCRIPT ================== -->
     <script type="module">
         import { auth, db } from "../js/firebase.js";
-        import {
-            collection,
-            query,
-            where,
-            getDocs,
-            deleteDoc,
-            doc,
-            updateDoc
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        import {
-            onAuthStateChanged
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { collection, getDocs, deleteDoc, doc, updateDoc }
+            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { onAuthStateChanged }
+            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-        // Check authentication
-        onAuthStateChanged(auth, (user) => {
-            if (!user) {
-                alert("Please login first to view your cart");
-                window.location.href = "login.html";
-                return;
-            }
-            loadCartItems(user.uid);
+        // Check user
+        onAuthStateChanged(auth, user => {
+            if (!user) return location.href = "login.html";
+            loadCart(user.uid);
         });
 
-        async function loadCartItems(userId) {
-            try {
-                const q = query(
-                    collection(db, "carts"),
-                    where("userId", "==", userId)
-                );
+        // ================= LOAD CART =================
+        async function loadCart(uid) {
+            const container = document.getElementById("cartItems");
+            container.innerHTML = "<h2 class='empty-cart'>Loading...</h2>";
 
-                const snap = await getDocs(q);
-                const container = document.getElementById("cartItems");
+            try {
+                const snap = await getDocs(collection(db, "users", uid, "carts"));
                 let total = 0;
 
                 if (snap.empty) {
                     container.innerHTML = `
             <div class="empty-cart">
               <h2>Your cart is empty</h2>
-              <p>Add some delicious items from our menu!</p>
-              <a href="menu.html" class="btn-order" style="margin-top: 20px;">Browse Menu</a>
-            </div>
-          `;
-                    document.getElementById("total").innerText = "Total: ৳0";
-                    document.getElementById("checkoutBtn").style.display = 'none';
+              <a href="menu.html" class="btn-order">Browse Menu</a>
+            </div>`;
+                    document.getElementById("checkoutBtn").style.display = "none";
                     return;
                 }
 
-                container.innerHTML = '';
+                container.innerHTML = "";
+                snap.forEach(docSnap => {
+                    const item = docSnap.data();
+                    const subtotal = item.price * item.qty;
+                    total += subtotal;
 
-                snap.forEach((docItem) => {
-                    const item = docItem.data();
-                    const itemTotal = item.price * item.qty;
-                    total += itemTotal;
+                    container.innerHTML += `
+            <div class="cart-item">
+                <img src="${item.image}" class="cart-item-image">
+                <div class="cart-item-details">
+                    <h3>${item.name}</h3>
+                    <p class="cart-item-price">৳${item.price}</p>
 
-                    const cartItem = document.createElement('div');
-                    cartItem.className = 'cart-item';
-                    cartItem.innerHTML = `
-            <img src="${item.image}" class="cart-item-image" alt="${item.name}">
-            <div class="cart-item-details">
-              <h3>${item.name}</h3>
-              <p class="cart-item-price">৳${item.price} each</p>
-              
-              <div class="quantity-controls">
-                <button class="quantity-btn" onclick="updateQuantity('${docItem.id}', ${item.qty - 1})">-</button>
-                <span>Quantity: ${item.qty}</span>
-                <button class="quantity-btn" onclick="updateQuantity('${docItem.id}', ${item.qty + 1})">+</button>
-              </div>
-              
-              <p><strong>Item Total: ৳${itemTotal}</strong></p>
-              <button class="btn-remove" onclick="removeFromCart('${docItem.id}')">
-                Remove Item
-              </button>
-            </div>
-          `;
+                    <div class="quantity-controls">
+                        <button class="quantity-btn" onclick="updateQty('${docSnap.id}',${item.qty - 1})">-</button>
+                        <span>Qty: ${item.qty}</span>
+                        <button class="quantity-btn" onclick="updateQty('${docSnap.id}',${item.qty + 1})">+</button>
+                    </div>
 
-                    container.appendChild(cartItem);
+                    <b>Total: ৳${subtotal}</b><br>
+                    <button class="btn-remove" onclick="removeItem('${docSnap.id}')">Remove</button>
+                </div>
+            </div>`;
                 });
 
-                document.getElementById("total").innerText = `Total: ৳${total}`;
-                document.getElementById("checkoutBtn").style.display = total > 0 ? 'inline-block' : 'none';
-
-            } catch (error) {
-                console.error("Error loading cart:", error);
-                document.getElementById("cartItems").innerHTML = `
-          <div class="empty-cart">
-            <h2>Error loading cart</h2>
-            <p>Please try again later</p>
-            <button onclick="location.reload()" class="btn-order">Retry</button>
-          </div>
-        `;
+                document.getElementById("total").innerText = "Total: ৳" + total;
+                document.getElementById("checkoutBtn").style.display = "inline-block";
             }
+            catch (e) { container.innerHTML = "<h2 class='empty-cart'>Error loading cart</h2>" }
         }
 
-        // Global functions for cart operations
-        window.removeFromCart = async function (itemId) {
-            if (!confirm("Remove this item from cart?")) return;
-
-            try {
-                await deleteDoc(doc(db, "carts", itemId));
-                const user = auth.currentUser;
-                await loadCartItems(user.uid);
-            } catch (error) {
-                console.error("Error removing item:", error);
-                alert("Error removing item. Please try again.");
-            }
+        // ================= UPDATE =================
+        window.updateQty = async function (id, qty) {
+            if (qty < 1) return removeItem(id);
+            await updateDoc(doc(db, "users", auth.currentUser.uid, "carts", id), { qty });
+            loadCart(auth.currentUser.uid);
         };
 
-        window.updateQuantity = async function (itemId, newQty) {
-            if (newQty < 1) {
-                removeFromCart(itemId);
-                return;
-            }
-
-            try {
-                await updateDoc(doc(db, "carts", itemId), {
-                    qty: newQty
-                });
-
-                const user = auth.currentUser;
-                await loadCartItems(user.uid);
-            } catch (error) {
-                console.error("Error updating quantity:", error);
-                alert("Error updating quantity. Please try again.");
-            }
+        // ================= DELETE =================
+        window.removeItem = async function (id) {
+            await deleteDoc(doc(db, "users", auth.currentUser.uid, "carts", id));
+            loadCart(auth.currentUser.uid);
         };
 
-        // Make checkout function
-        window.checkout = function () {
-            const total = document.getElementById("total").textContent;
-            if (confirm(`Proceed to checkout with ${total}?`)) {
-                window.location.href = "checkout.html";
-            }
-        };
+        // ================= CHECKOUT =================
+        window.checkout = () => location.href = "checkout.html";
     </script>
 </head>
 
 <body class="container">
-    <!-- Header -->
+
     <header class="header">
         <div class="logo">🍰 Bakeryance</div>
         <nav>
@@ -270,20 +209,18 @@
                 <li><a href="contact.html">Contact</a></li>
             </ul>
         </nav>
+        <a href="dashboard.html" class="btn-order">My Account</a>
         <a href="cart.html" class="cart-btn">🛒</a>
     </header>
 
     <div class="cart-container">
         <div class="cart-header">
             <h1>🛒 My Cart</h1>
-            <a href="menu.html" class="btn-order" style="background: #666;">Continue Shopping</a>
+            <a href="menu.html" class="btn-order">Continue Shopping</a>
         </div>
 
         <div id="cartItems">
-            <!-- Cart items will be loaded here -->
-            <div class="empty-cart">
-                <h2>Loading your cart...</h2>
-            </div>
+            <h2 class="empty-cart">Loading...</h2>
         </div>
 
         <div class="cart-total">
@@ -291,45 +228,33 @@
         </div>
 
         <div class="cart-actions">
-            <button id="checkoutBtn" class="btn-order" onclick="checkout()" style="display: none;">
-                Proceed to Checkout
-            </button>
-            <button class="btn-order" style="background: #666;" onclick="window.location.href='menu.html'">
-                Add More Items
+            <button id="checkoutBtn" class="btn-order" onclick="checkout()" style="display:none;">
+                Checkout
             </button>
         </div>
     </div>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
-    
             <div>
                 <h4>Contact Us</h4>
                 <p>📍 Dhanmondi, Dhaka</p>
                 <p>📞 +880 1234-567890</p>
                 <p>📧 hello@bakeryance.com</p>
             </div>
-    
             <div>
                 <h4>Opening Hours</h4>
-                <p>Mon–Fri: 9am–8pm</p>
-                <p>Sat–Sun: 10am–9pm</p>
+                <p>Mon-Fri 9am-8pm</p>
+                <p>Sat-Sun 10am-9pm</p>
             </div>
-    
             <div>
                 <h4>Follow Us</h4>
-                <div class="social-icons">
-                    <a href="#">🌸</a>
-                    <a href="#">🍪</a>
-                    <a href="#">🧁</a>
-                </div>
+                <div class="social-icons"><a>🌸</a><a>🍪</a><a>🧁</a></div>
             </div>
-    
         </div>
-    
-        <p class="copyright">© 2025 Bakeryance. All rights reserved.</p>
+        <p class="copyright">© 2025 Bakeryance</p>
     </footer>
+
 </body>
 
 </html>

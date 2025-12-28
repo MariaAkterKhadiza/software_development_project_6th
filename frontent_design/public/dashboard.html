@@ -2,52 +2,305 @@
 <html>
 
 <head>
+    <title>Profile - Bakeryance</title>
     <link rel="stylesheet" href="../style.css">
-    <script type="module" src="../js/protect.js"></script>
-    <script type="module" src="../js/logout.js"></script>
+
+    <style>
+        body {
+            background: #fff7f3;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .profile-container {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: left;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            background: #f0f0f0;
+            color: #333;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-btn:hover {
+            background: #e0e0e0;
+        }
+
+        h2 {
+            text-align: center;
+            font-size: 30px;
+            color: #ff4f81;
+            margin-bottom: 25px;
+        }
+
+        #profileBox p {
+            font-size: 18px;
+            margin: 15px 0;
+            color: #444;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        #profileBox p strong {
+            color: #333;
+            min-width: 100px;
+            display: inline-block;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0 20px 0;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .btn-edit,
+        .btn-save,
+        .btn-cancel {
+            display: inline-block;
+            margin-top: 25px;
+            margin-right: 8px;
+            padding: 12px 24px;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-edit {
+            background: #ffa54f;
+        }
+
+        .btn-save {
+            background: #28a745;
+        }
+
+        .btn-cancel {
+            background: #dc3545;
+        }
+
+        .btn-reset {
+            background: #ff4d4d;
+            padding: 8px 16px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .btn-reset:hover {
+            background: #e60000;
+        }
+
+        .btn-edit:hover {
+            background: #ff8c42;
+        }
+
+        .message {
+            color: green;
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0fff4;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
 </head>
 
-<body class="container">
+<body>
 
-    <h1>My Account</h1>
-
-    <a class="btn-order" href="profile.html">Profile</a><br><br>
-    <a class="btn-order" href="orders.html">Orders</a><br><br>
-
-    <button class="btn-order" onclick="logoutUser()">Logout</button>
-
-
-
-    <footer class="footer">
-        <div class="footer-content">
-    
-            <div>
-                <h4>Contact Us</h4>
-                <p>📍 Dhanmondi, Dhaka</p>
-                <p>📞 +880 1234-567890</p>
-                <p>📧 hello@bakeryance.com</p>
-            </div>
-    
-            <div>
-                <h4>Opening Hours</h4>
-                <p>Mon–Fri: 9am–8pm</p>
-                <p>Sat–Sun: 10am–9pm</p>
-            </div>
-    
-            <div>
-                <h4>Follow Us</h4>
-                <div class="social-icons">
-                    <a href="#">🌸</a>
-                    <a href="#">🍪</a>
-                    <a href="#">🧁</a>
-                </div>
-            </div>
-    
+    <section class="profile-container">
+        <div class="header-nav">
+            <a href="homepage.html" class="back-btn">← Back to Home</a>
+            <h2 style="margin: 0;">My Profile</h2>
         </div>
-    
-        <p class="copyright">© 2025 Bakeryance. All rights reserved.</p>
-    </footer>
 
+        <div id="message" class="message"></div>
+
+        <div id="profileBox">
+            <p>Loading profile...</p>
+        </div>
+
+        <div id="editButtons" style="display:none;">
+            <button class="btn-save" onclick="saveProfile()">Save Changes</button>
+            <button class="btn-cancel" onclick="loadProfile()">Cancel</button>
+        </div>
+
+        <button class="btn-edit" id="editBtn" onclick="enableEdit()" style="display:none;">Edit Profile</button>
+    </section>
+
+    <!-- Firebase Script -->
+    <script type="module">
+        import { auth, db } from "../js/firebase.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { doc, getDoc, updateDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+        let userData = {}, uid = null;
+
+        // Check authentication
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "login.html";
+                return;
+            }
+            uid = user.uid;
+            loadProfile();
+        });
+
+        async function loadProfile() {
+            try {
+                const snap = await getDoc(doc(db, "users", uid, "profile", "info"));
+
+                if (!snap.exists()) {
+                    // Create profile if it doesn't exist
+                    const user = auth.currentUser;
+                    if (user) {
+                        await setDoc(doc(db, "users", uid, "profile", "info"), {
+                            name: user.displayName || "User",
+                            email: user.email,
+                            phone: "",
+                            createdAt: serverTimestamp()
+                        });
+                        // Reload after creating
+                        return loadProfile();
+                    }
+
+                    document.getElementById("profileBox").innerHTML = "<p>No profile found</p>";
+                    return;
+                }
+
+                userData = snap.data();
+
+                const joined = userData.createdAt?.seconds
+                    ? new Date(userData.createdAt.seconds * 1000).toLocaleDateString()
+                    : "N/A";
+
+                document.getElementById("profileBox").innerHTML = `
+                    <p><strong>Name:</strong> ${userData.name || "Not set"}</p>
+                    <p><strong>Email:</strong> ${userData.email || "Not set"}</p>
+                    <p><strong>Phone:</strong> ${userData.phone || "Not Added"}</p>
+                    <p><strong>Joined:</strong> ${joined}</p>
+                    <p><strong>Password:</strong> 
+                        <button class="btn-reset" onclick="resetPassword()">Reset Password</button>
+                    </p>
+                `;
+
+                document.getElementById("editButtons").style.display = "none";
+                document.getElementById("editBtn").style.display = "inline-block";
+                document.getElementById("message").style.display = "none";
+
+            } catch (error) {
+                console.error("Error loading profile:", error);
+                document.getElementById("profileBox").innerHTML = `
+                    <p style="color: red;">Error loading profile. Please try again.</p>
+                `;
+            }
+        }
+
+        window.enableEdit = function () {
+            document.getElementById("profileBox").innerHTML = `
+                <label><strong>Name:</strong></label>
+                <input id="editName" value="${userData.name || ''}" placeholder="Enter your name">
+                <label><strong>Phone:</strong></label>
+                <input id="editPhone" value="${userData.phone || ''}" placeholder="Enter phone number">
+            `;
+
+            document.getElementById("editButtons").style.display = "block";
+            document.getElementById("editBtn").style.display = "none";
+        }
+
+        window.saveProfile = async function () {
+            const newName = document.getElementById("editName").value.trim();
+            const newPhone = document.getElementById("editPhone").value.trim();
+
+            if (!newName) {
+                showMessage("Name cannot be empty!", "error");
+                return;
+            }
+
+            if (newPhone && (newPhone.length < 10 || isNaN(newPhone))) {
+                showMessage("Please enter a valid 10-digit phone number", "error");
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, "users", uid, "profile", "info"), {
+                    name: newName,
+                    phone: newPhone
+                });
+
+                showMessage("Profile updated successfully!", "success");
+
+                // Reload profile after 1 second
+                setTimeout(() => {
+                    loadProfile();
+                }, 1500);
+
+            } catch (error) {
+                console.error("Error updating profile:", error);
+                showMessage("Failed to update profile. Please try again.", "error");
+            }
+        }
+
+        // Password Reset Feature
+        window.resetPassword = async function () {
+            const email = userData.email || auth.currentUser?.email;
+            if (!email) {
+                showMessage("No email found for this account!", "error");
+                return;
+            }
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showMessage(`Password reset email sent to: ${email}<br>Check your inbox or spam folder.`, "success");
+            } catch (err) {
+                console.error("Password reset error:", err);
+                showMessage("Error: " + err.message, "error");
+            }
+        };
+
+        // Helper function to show messages
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById("message");
+            messageDiv.innerHTML = text;
+            messageDiv.style.color = type === "success" ? "green" : "red";
+            messageDiv.style.backgroundColor = type === "success" ? "#f0fff4" : "#fff5f5";
+            messageDiv.style.display = "block";
+        }
+
+        // Make loadProfile available globally
+        window.loadProfile = loadProfile;
+    </script>
 
 </body>
 

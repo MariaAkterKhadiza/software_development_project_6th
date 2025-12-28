@@ -7,101 +7,56 @@
     <link rel="stylesheet" href="../style.css">
 
     <style>
-        .orders-container {
-            max-width: 1000px;
-            margin: 40px auto;
-            padding: 0 20px;
+        body {
+            background: #fff7f3;
+            font-family: sans-serif;
         }
 
-        .orders-header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .orders-list {
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-
-        .order-card {
+        .orders-box {
+            width: 60%;
+            margin: 80px auto;
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            border-left: 5px solid #e74c3c;
-        }
-
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 15px;
-        }
-
-        .order-id {
-            font-weight: bold;
-            font-size: 1.2em;
-        }
-
-        .order-status {
-            padding: 8px 15px;
+            padding: 40px;
             border-radius: 20px;
-            font-size: 0.9em;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
         }
 
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status-paid {
-            background: #d4edda;
-            color: #155724;
+        h2 {
+            font-size: 32px;
+            margin-bottom: 25px;
+            color: #ff4f81;
         }
 
         .order-item {
             display: flex;
             justify-content: space-between;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        .order-summary {
-            margin-top: 15px;
-            background: #f8f9fa;
-            padding: 15px;
+            padding: 12px;
+            background: #fafafa;
             border-radius: 10px;
+            margin-top: 12px;
+            border-left: 4px solid #ff4f81;
         }
 
-        .summary-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 8px 0;
+        .order-status {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: white;
         }
 
-        .summary-total {
-            font-weight: bold;
-            border-top: 2px solid #ddd;
-            padding-top: 10px;
+        .pending {
+            background: #ffb84d;
         }
 
-        .empty-orders {
-            text-align: center;
-            padding: 60px;
-            background: white;
-            border-radius: 15px;
+        .paid {
+            background: #57cc99;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- HEADER -->
     <header class="header">
         <div class="logo">🍰 Bakeryance</div>
         <nav>
@@ -109,122 +64,105 @@
                 <li><a href="homepage.html">Home</a></li>
                 <li><a href="menu.html">Menu</a></li>
                 <li><a href="cart.html">Cart</a></li>
-                <li><a href="orders.html" class="active">Orders</a></li>
+                <li><a class="active" href="orders.html">Orders</a></li>
+                <li><a href="profile.html">Profile</a></li>
             </ul>
         </nav>
         <a href="cart.html" class="cart-btn">🛒</a>
     </header>
 
-    <div class="orders-container">
-        <div class="orders-header">
-            <h1>📦 My Orders</h1>
-            <p>View and track your orders</p>
-        </div>
 
-        <div id="ordersList" class="orders-list">
-            <div class="empty-orders">Loading orders...</div>
-        </div>
+
+    <div class="orders-box">
+        <h2>📦 My Orders</h2>
+        <div id="orderList">Loading orders...</div>
     </div>
 
-    <!-- FOOTER -->
-    <footer class="footer">
-        <p class="copyright">© 2025 Bakeryance. All rights reserved.</p>
-    </footer>
 
-    <!-- 🔥 FIXED FIREBASE LOGIC -->
+
     <script type="module">
         import { auth, db } from "../js/firebase.js";
-        import {
-            collection,
-            query,
-            where,
-            getDocs
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                location.href = "login.html";
-                return;
-            }
-            loadOrders(user.uid);
-        });
+                if (!user) return location.href = "login.html";
 
-        async function loadOrders(userId) {
-            const ordersList = document.getElementById("ordersList");
-
-            try {
-                const q = query(
-                    collection(db, "orders"),
-                    where("userId", "==", userId)
-                );
-
-                const snap = await getDocs(q);
+                const orderRef = collection(db, "users", user.uid, "orders");
+                const snap = await getDocs(orderRef);
+                const box = document.getElementById("orderList");
 
                 if (snap.empty) {
-                    ordersList.innerHTML = `
-                        <div class="empty-orders">
-                            <h3>No orders yet</h3>
-                            <a href="menu.html" class="btn-order">Shop Now</a>
-                        </div>
-                    `;
+                    box.innerHTML = `<p>No orders found</p><br><a href="menu.html" class="btn-order">Order Now</a>`;
                     return;
                 }
 
-                ordersList.innerHTML = "";
+                box.innerHTML = "";
 
-                snap.forEach(docSnap => {
-                    const order = docSnap.data();
-
-                    let itemsHTML = "";
-                    let subtotal = 0;
-
-                    order.items.forEach(item => {
-                        const itemTotal = item.price * item.qty;
-                        subtotal += itemTotal;
-                        itemsHTML += `
-                            <div class="order-item">
-                                <span>${item.name} × ${item.qty}</span>
-                                <span>৳${itemTotal}</span>
-                            </div>
-                        `;
-                    });
-
-                    const delivery = order.deliveryFee || 0;
-                    const total = order.total || subtotal + delivery;
-
-                    const card = document.createElement("div");
-                    card.className = "order-card";
-                    card.innerHTML = `
-                        <div class="order-header">
-                            <div class="order-id">${order.orderId}</div>
-                            <div class="order-status status-${order.status?.toLowerCase() || 'pending'}">
-                                ${order.status || 'Pending'}
-                            </div>
-                        </div>
-
-                        ${itemsHTML}
-
-                        <div class="order-summary">
-                            <div class="summary-row"><span>Subtotal</span><span>৳${subtotal}</span></div>
-                            <div class="summary-row"><span>Delivery</span><span>৳${delivery}</span></div>
-                            <div class="summary-row summary-total"><span>Total</span><span>৳${total}</span></div>
-                        </div>
-                    `;
-                    ordersList.appendChild(card);
+                // 🔥 Sort latest order first
+                const orders = snap.docs.sort((a, b) => {
+                    const t1 = a.data().createdAt?.seconds || 0;
+                    const t2 = b.data().createdAt?.seconds || 0;
+                    return t2 - t1;
                 });
 
-            } catch (err) {
-                console.error(err);
-                ordersList.innerHTML = `
-                    <div class="empty-orders">
-                        <h3>Error loading orders</h3>
-                        <button onclick="location.reload()" class="btn-order">Retry</button>
+                orders.forEach(docSnap => {
+                    const d = docSnap.data();
+                    const id = docSnap.id;
+
+                    let itemsHTML = "";
+                    d.items.forEach(item => {
+                        itemsHTML += `
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:space-between;
+                    gap:10px;
+                    padding:10px;
+                    margin:6px 0;
+                    background:#fff;
+                    border-radius:8px;">
+                    
+                    <img src="${item.image}" style="width:65px;height:65px;border-radius:8px;object-fit:cover;">
+                    
+                    <div style="flex:1;">
+                        <b>${item.name}</b><br>
+                        Qty: ${item.qty}
                     </div>
-                `;
-            }
-        }
+
+                    <b>৳${item.qty * item.price}</b>
+                </div>
+            `;
+                    });
+
+                    box.innerHTML += `
+            <div class="order-item" onclick="toggleDetails('${id}')">
+                <div>
+                    <b>${d.orderId}</b><br>
+                    Items: ${d.items.length}<br>
+                    Total: ৳${d.total}
+                </div>
+                <span class="order-status ${d.status == "Paid" ? "paid" : "pending"}">${d.status}</span>
+            </div>
+
+            <div id="details-${id}" style="display:none;text-align:left;margin-top:10px;padding:15px;background:#fff;border-radius:10px">
+                ${itemsHTML}
+                <hr style="margin:10px 0;border:.5px solid #eee;">
+                <p><b>Address:</b> ${d.address || "Not Provided"}</p>
+                <p><b>Payment:</b> ${d.paymentMethod}</p>
+                <p><b>Date:</b> ${d.createdAt?.seconds ? new Date(d.createdAt.seconds * 1000).toLocaleDateString() : "N/A"}</p>
+            </div>
+        `;
+                });
+            });
+
+
+        window.toggleDetails = function (id) {
+            const box = document.getElementById("details-" + id);
+            box.style.display = box.style.display === "none" ? "block" : "none";
+        };
     </script>
+
 
 </body>
 
