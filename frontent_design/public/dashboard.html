@@ -31,7 +31,13 @@
             margin-bottom: 30px;
         }
 
-        .back-btn {
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .back-btn,
+        .logout-btn {
             background: #f0f0f0;
             color: #333;
             padding: 8px 16px;
@@ -41,10 +47,22 @@
             display: inline-flex;
             align-items: center;
             gap: 5px;
+            cursor: pointer;
+            border: none;
+            font-family: Arial, sans-serif;
+        }
+
+        .logout-btn {
+            background: #ff4f81;
+            color: white;
         }
 
         .back-btn:hover {
             background: #e0e0e0;
+        }
+
+        .logout-btn:hover {
+            background: #e63e6d;
         }
 
         h2 {
@@ -140,7 +158,10 @@
 
     <section class="profile-container">
         <div class="header-nav">
-            <a href="homepage.html" class="back-btn">← Back to Home</a>
+            <div class="nav-buttons">
+                <a href="homepage.html" class="back-btn">← Back to Home</a>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
             <h2 style="margin: 0;">My Profile</h2>
         </div>
 
@@ -161,9 +182,18 @@
     <!-- Firebase Script -->
     <script type="module">
         import { auth, db } from "../js/firebase.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-        import { doc, getDoc, updateDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import {
+            onAuthStateChanged,
+            signOut,
+            sendPasswordResetEmail
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import {
+            doc,
+            getDoc,
+            updateDoc,
+            setDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
         let userData = {}, uid = null;
 
@@ -176,6 +206,18 @@
             uid = user.uid;
             loadProfile();
         });
+
+        // Logout function
+        window.logout = async function () {
+            try {
+                await signOut(auth);
+                // Redirect to login page after logout
+                window.location.href = "login.html";
+            } catch (error) {
+                console.error("Logout error:", error);
+                showMessage("Failed to logout. Please try again.", "error");
+            }
+        }
 
         async function loadProfile() {
             try {
@@ -261,7 +303,7 @@
 
                 showMessage("Profile updated successfully!", "success");
 
-                // Reload profile after 1 second
+                // Reload profile after 1.5 seconds
                 setTimeout(() => {
                     loadProfile();
                 }, 1500);
